@@ -35,16 +35,18 @@
             <label for="fulfill_image">Product Image (required when marking Fulfilled)</label>
             {{ form.fulfill_image(id='fulfill_image') }}
           </div>
-          <button class="btn primary" type="submit">{{ form.submit.label.text }}</button>
-          <a class="btn" href="{{ url_for('requirements.edit_requirement', req_id=item.id) }}" style="margin-left:8px;">Edit</a>
-          <form method="post" action="{{ url_for('requirements.delete_requirement', req_id=item.id, from_admin=from_admin) }}" style="display:inline; margin-left:8px;" onsubmit="return confirm('Delete this requirement?');">
-            <button class="btn danger" type="submit">Delete</button>
-          </form>
-          {% if from_admin %}
-            <a class="btn" href="{{ url_for('admin.dashboard') }}" style="margin-left:8px;">Back</a>
-          {% else %}
-            <a class="btn" href="{{ url_for('requirements.dashboard') }}" style="margin-left:8px;">Back</a>
-          {% endif %}
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn primary" type="submit">{{ form.submit.label.text }}</button>
+            <a class="btn" href="{{ url_for('requirements.edit_requirement', req_id=item.id) }}">Edit</a>
+            {% if from_admin %}
+              <a class="btn" href="{{ url_for('admin.dashboard') }}">Back</a>
+            {% else %}
+              <a class="btn" href="{{ url_for('requirements.dashboard') }}">Back</a>
+            {% endif %}
+          </div>
+        </form>
+        <form method="post" action="{{ url_for('requirements.delete_requirement', req_id=item.id, from_admin=from_admin) }}" style="margin-top:8px;" onsubmit="return confirm('Delete this requirement?');">
+          <button class="btn danger" type="submit">Delete</button>
         </form>
       </div>
     </div>
