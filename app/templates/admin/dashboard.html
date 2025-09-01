@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="grid mt-4">
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;">All Requirements (Admin)</h2>
+      <form method="get" class="grid" style="grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; margin:12px 0;">
+        <div>
+          <label for="staff">Staff</label>
+          <input id="staff" name="staff" type="text" value="{{ filter_staff or '' }}" placeholder="Search staff"/>
+        </div>
+        <div>
+          <label for="customer">Customer</label>
+          <input id="customer" name="customer" type="text" value="{{ filter_customer or '' }}" placeholder="Search customer"/>
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="open" {% if filter_status=='open' %}selected{% endif %}>Open (New + In Progress)</option>
+            <option value="new" {% if filter_status=='new' %}selected{% endif %}>New</option>
+            <option value="in_progress" {% if filter_status=='in_progress' %}selected{% endif %}>In Progress</option>
+            <option value="fulfilled" {% if filter_status=='fulfilled' %}selected{% endif %}>Fulfilled</option>
+            <option value="all" {% if filter_status=='all' %}selected{% endif %}>All</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:8px;">
+          <button class="btn primary" type="submit">Apply</button>
+          <a class="btn" href="{{ url_for('admin.dashboard') }}">Reset</a>
+        </div>
+      </form>
+      {% for dept, items in by_department.items() %}
+        <h3 style="margin:16px 0 8px 0;">{{ dept.value }}</h3>
+        {% if items %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Staff</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+              <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.customer_name }}</td>
+                <td>{{ item.staff_name }}</td>
+                <td><span class="badge">{{ item.status.value }}</span></td>
+                <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td><a class="btn" href="{{ url_for('requirements.detail', req_id=item.id, from_admin=1) }}">Open</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div style="color:var(--muted);">No items.</div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
+
+

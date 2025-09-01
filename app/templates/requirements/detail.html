@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="grid mt-4">
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;">Requirement #{{ item.id }}</h2>
+      <div class="grid" style="gap:8px; color:var(--muted);">
+        <div><strong style="color:var(--text);">Customer:</strong> {{ item.customer_name }}</div>
+        <div><strong style="color:var(--text);">Contact:</strong> {{ item.contact_info }}</div>
+        <div><strong style="color:var(--text);">Department:</strong> {{ item.department.value }}</div>
+        <div><strong style="color:var(--text);">Staff:</strong> {{ item.staff_name }}</div>
+        <div><strong style="color:var(--text);">Created:</strong> {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+        <div><strong style="color:var(--text);">Updated:</strong> {{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+      </div>
+
+      <div class="mt-4">
+        <h3 style="margin:0 0 8px 0;">Details</h3>
+        <div style="white-space:pre-wrap;">{{ item.details }}</div>
+      </div>
+
+      {% if item.image_filename %}
+      <div class="mt-4">
+        <h3 style="margin:0 0 8px 0;">Product Image</h3>
+        <img src="{{ url_for('requirements.uploaded_file', filename=item.image_filename) }}" alt="Product image" style="max-width:100%; border-radius:8px; border:1px solid #1f2937;"/>
+      </div>
+      {% endif %}
+
+      <div class="mt-4">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="field" style="max-width:260px;">
+            <label for="status">Status</label>
+            {{ form.status(id='status') }}
+          </div>
+          <div class="field" style="max-width:360px;">
+            <label for="fulfill_image">Product Image (required when marking Fulfilled)</label>
+            {{ form.fulfill_image(id='fulfill_image') }}
+          </div>
+          <button class="btn primary" type="submit">{{ form.submit.label.text }}</button>
+          <a class="btn" href="{{ url_for('requirements.edit_requirement', req_id=item.id) }}" style="margin-left:8px;">Edit</a>
+          <form method="post" action="{{ url_for('requirements.delete_requirement', req_id=item.id, from_admin=from_admin) }}" style="display:inline; margin-left:8px;" onsubmit="return confirm('Delete this requirement?');">
+            <button class="btn danger" type="submit">Delete</button>
+          </form>
+          {% if from_admin %}
+            <a class="btn" href="{{ url_for('admin.dashboard') }}" style="margin-left:8px;">Back</a>
+          {% else %}
+            <a class="btn" href="{{ url_for('requirements.dashboard') }}" style="margin-left:8px;">Back</a>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card mt-4" style="max-width:720px;">
+    <h2 style="margin:0 0 12px 0;">Edit Requirement #{{ item.id }}</h2>
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="field">
+        <label for="customer_name">Customer Name</label>
+        {{ form.customer_name(id='customer_name') }}
+      </div>
+      <div class="field">
+        <label for="contact_info">Contact Info</label>
+        {{ form.contact_info(id='contact_info') }}
+      </div>
+      <div class="field">
+        <label for="details">Requirement Details</label>
+        {{ form.details(id='details', rows=6) }}
+      </div>
+      <div class="field" style="max-width:300px;">
+        <label for="staff_name">Staff Name</label>
+        {{ form.staff_name(id='staff_name') }}
+      </div>
+      <div class="field">
+        <label for="image">Product Image (optional)</label>
+        {{ form.image(id='image') }}
+      </div>
+      <button class="btn primary" type="submit">Save</button>
+      <a class="btn" href="{{ url_for('requirements.detail', req_id=item.id) }}" style="margin-left:8px;">Cancel</a>
+    </form>
+  </div>
+{% endblock %}
+
+

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SHRADDHA EXTENSION - Customer Tracker App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      :root { --bg:#ffde06; --card:#ffffff; --text:#000000; --muted:#333333; --accent:#111111; --danger:#c1121f; }
+      *{ box-sizing:border-box; }
+      body{ margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--text); }
+      a{ color:#111111; text-decoration:none; }
+      .container{ max-width:980px; margin:0 auto; padding:24px; }
+      .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 24px; background:var(--bg); border-bottom:1px solid #00000030; position:sticky; top:0; }
+      .brand{ font-family:"Aachen Bold BT","AachenBT Bold","Aachen","Arial Black",Impact,system-ui,sans-serif; font-weight:900; letter-spacing:.5px; color:#000; }
+      .nav-links{ display:flex; gap:14px; align-items:center; }
+      .btn{ display:inline-block; padding:8px 14px; border-radius:8px; border:1px solid #000000; background:#ffffff; color:#000000; cursor:pointer; }
+      .btn.primary{ background:#000000; color:#ffffff; border-color:#000000; }
+      .btn.danger{ background:#c1121f; color:#ffffff; border-color:#7f1d1d; }
+      .card{ background:var(--card); border:1px solid #00000020; border-radius:12px; padding:20px; }
+      .grid{ display:grid; gap:16px; }
+      .mt-2{ margin-top:8px; } .mt-3{ margin-top:12px; } .mt-4{ margin-top:16px; } .mt-6{ margin-top:24px; }
+      .table{ width:100%; border-collapse:separate; border-spacing:0; color:#000000; }
+      .table th, .table td{ text-align:left; padding:12px 10px; border-bottom:1px solid #00000040; }
+      .badge{ padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid #000000; background:#fff; color:#000; }
+      .flash{ padding:12px 14px; border-radius:8px; border:1px solid #00000030; background:#fff4a3; color:#000; }
+      .flash.success{ background:#eaffea; border-color:#16a34a; }
+      .flash.info{ background:#fff5a8; }
+      .flash.warning{ background:#fff1cc; border-color:#a16207; }
+      .flash.danger{ background:#ffe5e5; border-color:#7f1d1d; }
+      input, textarea, select{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid #000000; background:#ffffff; color:#000000; }
+      label{ display:block; font-size:14px; color:var(--muted); margin-bottom:6px; }
+      .field{ margin-bottom:14px; }
+      footer{ color:var(--muted); font-size:12px; padding:24px; text-align:center; }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="brand">SHRADDHA EXTENSION - Customer Tracker App</div>
+      <div class="nav-links">
+        {% if current_user.is_authenticated %}
+          {% if current_user.is_admin %}
+            <a class="btn" href="{{ url_for('admin.dashboard') }}">Admin</a>
+          {% else %}
+            <span style="color:var(--muted); font-size:14px;">Dept: {{ current_user.department.value }}</span>
+            <a class="btn" href="{{ url_for('requirements.dashboard') }}">Dashboard</a>
+            <a class="btn primary" href="{{ url_for('requirements.create_requirement') }}">New Requirement</a>
+          {% endif %}
+          <a class="btn" href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
+          <a class="btn primary" href="{{ url_for('auth.login') }}">Login</a>
+        {% endif %}
+      </div>
+    </nav>
+
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="grid mt-3">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+      Built for SHRADDHA EXTENSION
+    </footer>
+  </body>
+  </html>
+
+
