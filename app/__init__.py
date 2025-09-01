@@ -77,30 +77,7 @@ def create_app() -> Flask:
         # If this fails (e.g., during migration tooling), app still starts; first request hook will try again
         pass
 
-    # Free-tier friendly bootstrap: create tables and seed on first request
-    @app.before_first_request
-    def _init_on_first_request() -> None:
-        from .models import User, Department
-
-        db.create_all()
-
-        defaults = [
-            ("gifts", Department.GIFTS, False, "password"),
-            ("stationery", Department.STATIONERY, False, "password"),
-            ("toys", Department.TOYS, False, "password"),
-            ("books", Department.BOOKS, False, "password"),
-            ("admin", Department.GIFTS, True, "admin123"),
-        ]
-        changed = False
-        for username, dept, is_admin, pwd in defaults:
-            existing = db.session.execute(db.select(User).filter_by(username=username)).scalar_one_or_none()
-            if not existing:
-                user = User(username=username, department=dept, is_admin=is_admin)
-                user.set_password(pwd)
-                db.session.add(user)
-                changed = True
-        if changed:
-            db.session.commit()
+    # Note: Flask 3 removed before_first_request; startup seeding handled above
 
     return app
 
