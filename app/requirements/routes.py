@@ -153,7 +153,7 @@ def browse_redirect():
 
 @requirements_bp.route("/dept/<dept>")
 def browse_dept(dept: str):
-    """Public, read-only department dashboard with filters."""
+    """Public department dashboard with filters and quick-create form link."""
     try:
         department_enum = Department[dept.upper()]
     except Exception:
@@ -194,7 +194,7 @@ def browse_dept(dept: str):
         filter_status=status,
         staff_list=staff_list,
         dept_title=department_enum.value,
-        public_view=True,
+        public_view=False,
     )
 @requirements_bp.route("/<int:req_id>/edit", methods=["GET", "POST"])
 @login_required

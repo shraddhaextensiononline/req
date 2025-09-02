@@ -50,7 +50,8 @@
           {% endif %}
           <a class="btn" href="{{ url_for('auth.logout') }}">Logout</a>
         {% else %}
-          <a class="btn primary" href="{{ url_for('auth.login') }}">Login</a>
+          <a class="btn" href="{{ url_for('auth.login') }}">Browse Departments</a>
+          <a class="btn primary" href="{{ url_for('auth.login', admin=1) }}">Admin Login</a>
         {% endif %}
       </div>
     </nav>
