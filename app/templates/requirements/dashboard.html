@@ -6,6 +6,8 @@
         <h2 style="margin:0;">{{ dept_title or current_user.department.value }} Requirements</h2>
         {% if not public_view %}
           <a class="btn primary" href="{{ url_for('requirements.create_requirement') }}">New Requirement</a>
+        {% else %}
+          <a class="btn primary" href="{{ url_for('requirements.create_requirement_public', dept=dept_key) }}">New Requirement</a>
         {% endif %}
       </div>
       <form method="get" class="grid" style="grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; margin-bottom:12px;">
@@ -57,7 +59,15 @@
                 <td>{{ item.staff_name }}</td>
                 <td><span class="badge">{{ item.status.value }}</span></td>
                 <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td><a class="btn" href="{{ url_for('requirements.detail', req_id=item.id) }}">Open</a></td>
+                {% if public_view %}
+                  {% if current_user.is_authenticated and current_user.is_admin %}
+                    <td><a class="btn" href="{{ url_for('requirements.detail', req_id=item.id) }}">Open</a></td>
+                  {% else %}
+                    <td><a class="btn" href="{{ url_for('requirements.public_detail', dept=dept_key, req_id=item.id) }}">Open</a></td>
+                  {% endif %}
+                {% else %}
+                  <td><a class="btn" href="{{ url_for('requirements.detail', req_id=item.id) }}">Open</a></td>
+                {% endif %}
               </tr>
             {% endfor %}
           </tbody>

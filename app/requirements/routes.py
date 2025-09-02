@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 
 from .. import db
 from ..forms import RequirementForm, UpdateStatusForm
-from ..models import Requirement, RequirementStatus, Department
+from ..models import Requirement, RequirementStatus, Department, User
 
 
 requirements_bp = Blueprint("requirements", __name__)
@@ -134,8 +134,8 @@ def detail(req_id: int):
 
 
 @requirements_bp.route("/uploads/<path:filename>")
-@login_required
 def uploaded_file(filename: str):
+    # Publicly accessible: images shown in public detail views
     return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
 
 
@@ -194,7 +194,210 @@ def browse_dept(dept: str):
         filter_status=status,
         staff_list=staff_list,
         dept_title=department_enum.value,
-        public_view=False,
+        dept_key=department_enum.name,
+        public_view=True,
+    )
+
+
+@requirements_bp.route("/dept/<dept>/<int:req_id>", methods=["GET", "POST"])
+def public_detail(dept: str, req_id: int):
+    try:
+        department_enum = Department[dept.upper()]
+    except Exception:
+        flash("Department not found", "warning")
+        return redirect(url_for("auth.login"))
+
+    requirement = db.session.get(Requirement, req_id)
+    if requirement is None or requirement.department != department_enum:
+        flash("Requirement not found", "warning")
+        return redirect(url_for("requirements.browse_dept", dept=department_enum.name))
+
+    # If an admin is logged in, send them to the private management view
+    if getattr(current_user, "is_authenticated", False) and getattr(current_user, "is_admin", False):
+        return redirect(url_for("requirements.detail", req_id=req_id))
+
+    # Allow public status updates with same validation rules
+    form = UpdateStatusForm(status=requirement.status.value)
+    if form.validate_on_submit():
+        new_status = RequirementStatus(form.status.data)
+        if new_status == RequirementStatus.FULFILLED and not requirement.image_filename:
+            image_file = form.fulfill_image.data
+            if not image_file or not getattr(image_file, "filename", ""):
+                flash("Please upload a product image to mark as Fulfilled.", "danger")
+                return render_template(
+                    "requirements/detail.html",
+                    item=requirement,
+                    form=form,
+                    from_admin=None,
+                    public_view=True,
+                    cancel_url=url_for("requirements.browse_dept", dept=department_enum.name),
+                    dept_key=department_enum.name,
+                )
+            original_name = secure_filename(image_file.filename)
+            ext = original_name.rsplit(".", 1)[-1].lower() if "." in original_name else ""
+            if ext not in current_app.config["ALLOWED_IMAGE_EXTENSIONS"]:
+                flash("Invalid image type.", "danger")
+                return render_template(
+                    "requirements/detail.html",
+                    item=requirement,
+                    form=form,
+                    from_admin=None,
+                    public_view=True,
+                    cancel_url=url_for("requirements.browse_dept", dept=department_enum.name),
+                    dept_key=department_enum.name,
+                )
+            unique_name = f"{uuid4().hex}.{ext}"
+            save_path = os.path.join(current_app.config["UPLOAD_FOLDER"], unique_name)
+            image_file.save(save_path)
+            requirement.image_filename = unique_name
+        requirement.status = new_status
+        db.session.commit()
+        flash("Status updated", "success")
+        return redirect(url_for("requirements.public_detail", dept=department_enum.name, req_id=req_id))
+
+    return render_template(
+        "requirements/detail.html",
+        item=requirement,
+        form=form,
+        from_admin=None,
+        public_view=True,
+        cancel_url=url_for("requirements.browse_dept", dept=department_enum.name),
+        dept_key=department_enum.name,
+    )
+
+
+@requirements_bp.route("/dept/<dept>/<int:req_id>/edit", methods=["GET", "POST"])
+def public_edit(dept: str, req_id: int):
+    try:
+        department_enum = Department[dept.upper()]
+    except Exception:
+        flash("Department not found", "warning")
+        return redirect(url_for("auth.login"))
+
+    requirement = db.session.get(Requirement, req_id)
+    if requirement is None or requirement.department != department_enum:
+        flash("Requirement not found", "warning")
+        return redirect(url_for("requirements.browse_dept", dept=department_enum.name))
+
+    form = RequirementForm(obj=requirement)
+    dept_staff = {
+        Department.GIFTS: ["Threeshma", "Ansuya", "Anita", "Harika", "Praveen"],
+        Department.STATIONERY: ["Mastaan", "Sunita", "Akash", "Rajesh"],
+        Department.TOYS: ["Sony", "Sai", "Satya"],
+        Department.BOOKS: ["Anjan", "Shiva", "Lavanya"],
+    }
+    staff_list = dept_staff.get(requirement.department, [])
+    form.staff_name.choices = [("", "Select staff...")] + [(s, s) for s in staff_list]
+
+    if form.validate_on_submit():
+        requirement.customer_name = form.customer_name.data
+        requirement.contact_info = form.contact_info.data
+        requirement.details = form.details.data
+        requirement.staff_name = form.staff_name.data
+
+        image_file = form.image.data
+        if image_file and getattr(image_file, "filename", ""):
+            original_name = secure_filename(image_file.filename)
+            ext = original_name.rsplit(".", 1)[-1].lower() if "." in original_name else ""
+            if ext not in current_app.config["ALLOWED_IMAGE_EXTENSIONS"]:
+                flash("Invalid image type.", "danger")
+                return render_template("requirements/edit.html", form=form, item=requirement)
+            unique_name = f"{uuid4().hex}.{ext}"
+            save_path = os.path.join(current_app.config["UPLOAD_FOLDER"], unique_name)
+            image_file.save(save_path)
+            requirement.image_filename = unique_name
+
+        db.session.commit()
+        flash("Requirement updated", "success")
+        return redirect(url_for("requirements.public_detail", dept=department_enum.name, req_id=requirement.id))
+
+    return render_template("requirements/edit.html", form=form, item=requirement)
+
+
+@requirements_bp.route("/dept/<dept>/<int:req_id>/delete", methods=["POST"])
+def public_delete(dept: str, req_id: int):
+    try:
+        department_enum = Department[dept.upper()]
+    except Exception:
+        flash("Department not found", "warning")
+        return redirect(url_for("auth.login"))
+
+    requirement = db.session.get(Requirement, req_id)
+    if requirement is None or requirement.department != department_enum:
+        flash("Requirement not found", "warning")
+        return redirect(url_for("requirements.browse_dept", dept=department_enum.name))
+
+    db.session.delete(requirement)
+    db.session.commit()
+    flash("Requirement deleted", "success")
+    return redirect(url_for("requirements.browse_dept", dept=department_enum.name))
+
+
+@requirements_bp.route("/dept/<dept>/create", methods=["GET", "POST"])
+def create_requirement_public(dept: str):
+    """Public requirement creation for a specific department (no login).
+    Uses the department's default user as created_by.
+    """
+    try:
+        department_enum = Department[dept.upper()]
+    except Exception:
+        flash("Department not found", "warning")
+        return redirect(url_for("auth.login"))
+
+    form = RequirementForm()
+
+    # Populate staff choices based on department
+    dept_staff = {
+        Department.GIFTS: ["Threeshma", "Ansuya", "Anita", "Harika", "Praveen"],
+        Department.STATIONERY: ["Mastaan", "Sunita", "Akash", "Rajesh"],
+        Department.TOYS: ["Sony", "Sai", "Satya"],
+        Department.BOOKS: ["Anjan", "Shiva", "Lavanya"],
+    }
+    staff_list = dept_staff.get(department_enum, [])
+    form.staff_name.choices = [("", "Select staff...")] + [(s, s) for s in staff_list]
+
+    if form.validate_on_submit():
+        # Find a default user for this department (seeded user, first non-admin)
+        default_user = db.session.execute(
+            db.select(User)
+            .where(User.department == department_enum, User.is_admin.is_(False))
+            .order_by(User.id.asc())
+        ).scalars().first()
+
+        if default_user is None:
+            flash("No default user found for this department.", "danger")
+            return render_template("requirements/create.html", form=form, cancel_url=url_for("requirements.browse_dept", dept=department_enum.name))
+
+        requirement = Requirement(
+            customer_name=form.customer_name.data,
+            contact_info=form.contact_info.data,
+            details=form.details.data,
+            staff_name=form.staff_name.data,
+            department=department_enum,
+            created_by=default_user,
+        )
+
+        image_file = form.image.data
+        if image_file and getattr(image_file, "filename", ""):
+            original_name = secure_filename(image_file.filename)
+            ext = original_name.rsplit(".", 1)[-1].lower() if "." in original_name else ""
+            if ext not in current_app.config["ALLOWED_IMAGE_EXTENSIONS"]:
+                flash("Invalid image type.", "danger")
+                return render_template("requirements/create.html", form=form, cancel_url=url_for("requirements.browse_dept", dept=department_enum.name))
+            unique_name = f"{uuid4().hex}.{ext}"
+            save_path = os.path.join(current_app.config["UPLOAD_FOLDER"], unique_name)
+            image_file.save(save_path)
+            requirement.image_filename = unique_name
+
+        db.session.add(requirement)
+        db.session.commit()
+        flash("Requirement created", "success")
+        return redirect(url_for("requirements.browse_dept", dept=department_enum.name))
+
+    return render_template(
+        "requirements/create.html",
+        form=form,
+        cancel_url=url_for("requirements.browse_dept", dept=department_enum.name),
     )
 @requirements_bp.route("/<int:req_id>/edit", methods=["GET", "POST"])
 @login_required

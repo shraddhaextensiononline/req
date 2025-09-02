@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
+  {% if is_admin_login %}
   <div class="card" style="max-width:720px; margin:40px auto 0;">
     <h2 style="margin:0 0 12px 0;">Admin Login</h2>
-    <p style="margin:0 0 16px 0; color:var(--muted);">Admins sign in below. For department browsing, use the dropdown.</p>
+    <p style="margin:0 0 16px 0; color:var(--muted);">Admins sign in below.</p>
     <form method="post" novalidate>
       {{ form.hidden_tag() }}
       <div class="field">
@@ -15,24 +16,31 @@
       </div>
       <button class="btn primary" type="submit">{{ form.submit.label.text }}</button>
     </form>
+    <div style="margin-top: 16px; text-align: center;">
+      <a href="{{ url_for('auth.login') }}" class="btn">← Back to Department Browse</a>
+    </div>
   </div>
-
-  <div class="card" style="max-width:720px; margin:16px auto 0;">
-    <h2 style="margin:0 0 12px 0;">Browse by Department</h2>
-    <form method="get" action="{{ url_for('requirements.browse_redirect') }}">
-      <div class="field" style="max-width:320px;">
-        <label for="dept">Department</label>
-        <select id="dept" name="dept" required>
-          <option value="">Select department...</option>
-          <option value="GIFTS">Gifts</option>
-          <option value="STATIONERY">Stationery</option>
-          <option value="TOYS">Toys</option>
-          <option value="BOOKS">Books</option>
-        </select>
-      </div>
-      <button class="btn" type="submit">Open</button>
-    </form>
+  {% else %}
+  <div class="grid" style="max-width:980px; margin:40px auto 0; grid-template-columns: 1fr; gap:16px;">
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;">Browse by Department</h2>
+      <p style="margin:0 0 16px 0; color:var(--muted);">Select a department to view requirements.</p>
+      <form method="get" action="{{ url_for('requirements.browse_redirect') }}">
+        <div class="field" style="max-width:320px;">
+          <label for="dept">Department</label>
+          <select id="dept" name="dept" required>
+            <option value="">Select department...</option>
+            <option value="GIFTS">Gifts</option>
+            <option value="STATIONERY">Stationery</option>
+            <option value="TOYS">Toys</option>
+            <option value="BOOKS">Books</option>
+          </select>
+        </div>
+        <button class="btn" type="submit">Open Department</button>
+      </form>
+    </div>
   </div>
+  {% endif %}
 {% endblock %}
 
 
