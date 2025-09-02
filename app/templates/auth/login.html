@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% block content %}
-  <div class="card" style="max-width:420px; margin:40px auto 0;">
-    <h2 style="margin:0 0 12px 0;">Staff Login</h2>
-    <p style="margin:0 0 16px 0; color:var(--muted);">Sign in with your department account.</p>
+  <div class="card" style="max-width:720px; margin:40px auto 0;">
+    <h2 style="margin:0 0 12px 0;">Admin Login</h2>
+    <p style="margin:0 0 16px 0; color:var(--muted);">Admins sign in below. For department browsing, use the dropdown.</p>
     <form method="post" novalidate>
       {{ form.hidden_tag() }}
       <div class="field">
@@ -15,7 +15,23 @@
       </div>
       <button class="btn primary" type="submit">{{ form.submit.label.text }}</button>
     </form>
-    
+  </div>
+
+  <div class="card" style="max-width:720px; margin:16px auto 0;">
+    <h2 style="margin:0 0 12px 0;">Browse by Department</h2>
+    <form method="get" action="{{ url_for('requirements.browse_redirect') }}">
+      <div class="field" style="max-width:320px;">
+        <label for="dept">Department</label>
+        <select id="dept" name="dept" required>
+          <option value="">Select department...</option>
+          <option value="GIFTS">Gifts</option>
+          <option value="STATIONERY">Stationery</option>
+          <option value="TOYS">Toys</option>
+          <option value="BOOKS">Books</option>
+        </select>
+      </div>
+      <button class="btn" type="submit">Open</button>
+    </form>
   </div>
 {% endblock %}
 

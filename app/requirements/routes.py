@@ -53,6 +53,8 @@ def dashboard():
         filter_customer=customer,
         filter_status=status,
         staff_list=staff_list,
+        dept_title=current_user.department.value,
+        public_view=False,
     )
 
 
@@ -137,6 +139,63 @@ def uploaded_file(filename: str):
     return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
 
 
+@requirements_bp.route("/browse")
+def browse_redirect():
+    """Public entry: accepts ?dept=GIFTS and redirects to pretty URL."""
+    dept_param = (request.args.get("dept") or "").upper()
+    try:
+        dept = Department[dept_param]
+    except Exception:
+        flash("Please select a valid department.", "warning")
+        return redirect(url_for("auth.login"))
+    return redirect(url_for("requirements.browse_dept", dept=dept.name))
+
+
+@requirements_bp.route("/dept/<dept>")
+def browse_dept(dept: str):
+    """Public, read-only department dashboard with filters."""
+    try:
+        department_enum = Department[dept.upper()]
+    except Exception:
+        flash("Department not found", "warning")
+        return redirect(url_for("auth.login"))
+
+    staff = request.args.get("staff", "").strip()
+    customer = request.args.get("customer", "").strip()
+    status = (request.args.get("status", "open") or "open").strip().lower()
+
+    query = db.select(Requirement).where(Requirement.department == department_enum)
+    if staff:
+        query = query.where(Requirement.staff_name.ilike(f"%{staff}%"))
+    if customer:
+        query = query.where(Requirement.customer_name.ilike(f"%{customer}%"))
+    if status == "open":
+        query = query.where(Requirement.status.in_([RequirementStatus.NEW, RequirementStatus.IN_PROGRESS]))
+    elif status in {"new", "in_progress", "fulfilled"}:
+        query = query.where(Requirement.status == RequirementStatus(status.upper()))
+
+    items = db.session.execute(query.order_by(Requirement.created_at.desc())).scalars().all()
+
+    dept_staff = {
+        Department.GIFTS: ["Threeshma", "Ansuya", "Anita", "Harika", "Praveen"],
+        Department.STATIONERY: ["Mastaan", "Sunita", "Akash", "Rajesh"],
+        Department.TOYS: ["Sony", "Sai", "Satya"],
+        Department.BOOKS: ["Anjan", "Shiva", "Lavanya"],
+    }
+    staff_list = dept_staff.get(department_enum, [])
+
+    return render_template(
+        "requirements/dashboard.html",
+        items=items,
+        Department=Department,
+        RequirementStatus=RequirementStatus,
+        filter_staff=staff,
+        filter_customer=customer,
+        filter_status=status,
+        staff_list=staff_list,
+        dept_title=department_enum.value,
+        public_view=True,
+    )
 @requirements_bp.route("/<int:req_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_requirement(req_id: int):
